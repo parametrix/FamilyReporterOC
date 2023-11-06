@@ -1,0 +1,179 @@
+﻿<UserControl x:Class="FamilyReporter.TreeViewCtrl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:FamilyReporter"
+             mc:Ignorable="d" 
+             d:DesignHeight="300" d:DesignWidth="300">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/FamilyReporter;component/Views/Resources/ViewResourceDictionary.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            <local:SortConverter x:Key="converter" />
+            <local:IsFamilyVisibilityConverter x:Key="isFamilyVisiblityConverter" />
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TreeView Name="trView" ItemsSource="{Binding DocumentViewModels}" 
+                  SelectedItemChanged="trView_SelectedItemChanged">
+            <TreeView.ItemContainerStyle>
+                <Style TargetType="{x:Type TreeViewItem}">
+                    <Setter Property="IsExpanded" Value="{Binding ElementName=expandAll, Path=IsChecked, UpdateSourceTrigger=Explicit}" />
+                    <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
+                </Style>
+            </TreeView.ItemContainerStyle>
+            <TreeView.Resources>
+                <HierarchicalDataTemplate DataType="{x:Type local:DocumentViewModel}" 
+                                          ItemsSource="{Binding Children, Converter={StaticResource converter}, ConverterParameter=DocumentItem.CategoryName}" 
+                                          >
+                    <StackPanel Orientation="Horizontal" >
+                        <TextBlock Text="{Binding ItemName}" FontWeight="DemiBold" Foreground="{Binding NodeColor}"/>
+                        <TextBlock Text=" &lt;" FontStyle="Italic" Foreground="SlateGray"/>
+                        <TextBlock Text="{Binding DocumentItem.DocumentSize}" FontStyle="Italic" Foreground="SlateGray"/>
+                        <TextBlock Text="kB, " FontStyle="Italic" Foreground="SlateGray"/>
+                        <TextBlock Text="{Binding DocumentItem.DocumentInstanceCount}" FontStyle="Italic" Foreground="SlateGray"/>
+                        <TextBlock Text="x&gt;" FontStyle="Italic" Foreground="SlateGray" />
+
+                        <StackPanel.ToolTip>
+                            <ToolTip>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Category: " />
+                                    <TextBlock Text="{Binding DocumentItem.CategoryName}" />
+                                </StackPanel>
+                            </ToolTip>
+                        </StackPanel.ToolTip>
+                        <StackPanel.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem 
+                                    Command="{Binding OpenDocumentCmd}"
+                                    CommandParameter="{Binding }"
+                                    Visibility="{Binding Converter={StaticResource isFamilyVisiblityConverter}, FallbackValue=Visble}"
+                                    >
+                                    <MenuItem.Header>
+                                        <Run Text="{Binding ItemName, StringFormat='Open {0}', Mode=OneWay}" />
+                                    </MenuItem.Header>
+                                </MenuItem>
+                                <MenuItem 
+                                    Header="Purge All Imported Object Styles In Document"
+                                    Command="{Binding PurgeAllImportedStylesInDocCmd}"
+                                    CommandParameter="{Binding}"
+                                    Click="PurgeImportedStylesInDocCmd_Click" />
+                                <MenuItem
+                                    Header="Delete Family From Project"
+                                    Command="{Binding DeleteDocumentCmd}"
+                                    CommandParameter="{Binding}"
+                                    Click="DeleteSelectedDocument_Click" />
+                                <MenuItem
+                                    Header="Delete Checked Imports"
+                                    Command="{Binding DeleteChkdImportCmd}"
+                                    CommandParameter="{Binding}"
+                                    Click="DeleteChkdImport_Click" />
+                            </ContextMenu>
+                        </StackPanel.ContextMenu>
+                    </StackPanel>
+                </HierarchicalDataTemplate>
+
+
+                <HierarchicalDataTemplate DataType="{x:Type local:ImportInstanceViewModel}" ItemsSource="{Binding Children}">
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox IsChecked="{Binding IsChecked}"/>
+                        <TextBlock Text="{Binding ItemName}" />
+
+                        <StackPanel.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem 
+                                    Header="Delete Selected Object Styles" 
+                                    Command="{Binding PurgeSelImportedStylesInImportCmd}"
+                                    CommandParameter="{Binding}"
+                                    Click="PurgeSelectedObjectStyles_Click" />
+
+                                <MenuItem 
+                                    Header="Delete All Object Styles In Import" 
+                                    Command="{Binding PurgeAllImportedStylesInImportCmd}"
+                                    CommandParameter="{Binding}"
+                                    Click="PurgeAllObjectStyles_Click" />
+
+                                <MenuItem
+                                    Header="Delete Import Instance"
+                                    Command="{Binding DeleteImportCmd}"
+                                    CommandParameter="{Binding}"
+                                    Click="DeleteImportCmd_Click" />
+                            </ContextMenu>
+                        </StackPanel.ContextMenu>
+                    </StackPanel>
+                </HierarchicalDataTemplate>
+
+                <DataTemplate DataType="{x:Type local:ImportSubCategoryViewModel}">
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox Name="chkBxImportedObjectStyle" Checked="chkBxImportedObjectStyle_Checked"  IsChecked="{Binding IsChecked}" >
+                            <TextBlock Text="{Binding ItemName}" Padding="2"/>
+                        </CheckBox>
+                    </StackPanel>
+                </DataTemplate>
+
+
+                <!-- Button Style-->
+                <Style TargetType="Button">
+                    <Setter Property="Padding" Value="4" />
+                    <Setter Property="Margin" Value="6" />
+                    <Setter Property="MinWidth" Value="45" />
+                    <Setter Property="MinHeight" Value="16" />
+                </Style>
+
+            </TreeView.Resources>
+
+        </TreeView>
+
+        <StackPanel Orientation="Horizontal" Grid.Row="1" Background="Gainsboro">
+            <ToggleButton x:Name="expandAll" >
+                <ToggleButton.Style>
+                    <Style TargetType="ToggleButton" >
+                        <Setter Property="Margin" Value="8" />
+                        <Setter Property="Height" Value="25"/>
+                        <Setter Property="MinWidth" Value="115" />
+                        <Setter Property="Padding" Value="4" />
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ToggleButton">
+                                    <Border BorderThickness="2"
+                                                BorderBrush="WhiteSmoke"
+                                                Background="{TemplateBinding Background}"
+                                                CornerRadius="2">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="ToggleButton.IsChecked" Value="True">
+                                            <Setter Property="Background" Value="LightSteelBlue" />
+                                        </Trigger>
+                                        <Trigger Property="ToggleButton.IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="SlateGray" />
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                        <!--END OF STYLING-->
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource Self}}" Value="True">
+                                <Setter Property="Content" Value="Collapse Tree" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource Self}}" Value="False">
+                                <Setter Property="Content" Value="Expand Tree" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ToggleButton.Style>
+            </ToggleButton>
+            
+        </StackPanel>
+
+    </Grid>
+</UserControl>

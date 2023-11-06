@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<RevitAddIns>
+  <AddIn Type="Application">
+    <Assembly>FamilySizeReporter.bundle\Contents\FamilyReporter.dll</Assembly>
+    <AddInId>C31AA4E9-F99C-4046-AD50-75303E897864</AddInId>
+    <FullClassName>FamilySizeReporter.App</FullClassName>
+    <Name>FamilySizeReporter</Name>
+    <Text>Family Size Reporter</Text>
+    <VendorId>STPL</VendorId>
+    <VendorDescription>SpiceToolsTechnologiesLimited, http://spicetools.co</VendorDescription>
+    <VisibilityMode>NotVisibleInFamily</VisibilityMode>
+    <LongDescription>
+      Family Size Reporter
+      This application has been tested with Revit 2015.
+      It is designed to report the file size of the project
+      document and all the component families within it.
+      This version was released on the 16th October, 2015.
+    </LongDescription>
+  </AddIn>
+</RevitAddIns>

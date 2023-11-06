@@ -1,0 +1,255 @@
+﻿<UserControl x:Class="FamilyReporter.MainWindow"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
+             xmlns:local="clr-namespace:FamilyReporter"
+             mc:Ignorable="d" 
+             d:DesignHeight="520" d:DesignWidth="920" >
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/FamilyReporter;component/Views/Resources/ViewResourceDictionary.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            <local:IsFamilyVisibilityConverter x:Key="isFamilyVisiblityConverter" />
+            <local:ShowDocCommandsConverter x:Key="showDocCommands" />
+            <local:ShowImportsCommandsConverter x:Key="showImportCommands" />
+            <local:ShowToolbarConverter x:Key="showToolBarConverter" />
+            <local:ToolbarWidthConverter x:Key="toolBarWidthConverter" />
+            <local:IsProjectVisibilityConverter x:Key="isProjectConverter" />
+            <local:IsTreeViewCtrl x:Key="isTreeViewCtrl" />
+            <BitmapImage x:Key="EscheresqueBackground" UriSource="pack://application:,,,/FamilyReporter;component/Resources/escheresque_ste.png" />
+            <BitmapImage x:Key="elegentGridBackground" UriSource="pack://application:,,,/FamilyReporter;component/Resources/elegant_grid_@2X.png" />
+            <BitmapImage x:Key="asanohaGridBackground" UriSource="pack://application:,,,/FamilyReporter;component/Resources/asanoha-400px.png" />
+
+            <ContextMenu x:Key="cmButton">
+                <MenuItem
+                x:Name="helpItem"
+                Header="Open Help Page"
+                Click="helpItem_Click" />
+                <Separator />
+                <MenuItem x:Name="loadXml"
+                          Header="Create Project Xml"
+                          Click="loadXml_Click" />
+                <Separator />
+                <MenuItem x:Name="exportToCSV"
+                          Header="Export Data To CSV"
+                          Click="btnExportToCSV_Click" />
+
+            </ContextMenu>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="56" />
+        </Grid.RowDefinitions>
+        <Grid Background="Gainsboro" Grid.ColumnSpan="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <ToggleButton x:Name="changeCtrl" Style="{StaticResource ChangeCtrlStyle}" Click="changeCtrl_Click" >
+                <ToggleButton.ToolTip>
+                    <TextBlock Text="{Binding ElementName=changeCtrl, Path=Content}" />
+                </ToggleButton.ToolTip>
+            </ToggleButton>
+            <Border BorderBrush="WhiteSmoke" BorderThickness="2" Grid.Column="1"  CornerRadius="2" Margin="4">
+                <Grid  Background="Gainsboro" >
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Currently Selected: " VerticalAlignment="Bottom" Margin="4,2,2,8"/>
+                    <TextBlock Grid.Column="1" Text="{Binding SelectedItem.ItemName}"  Background="White" Margin="6" VerticalAlignment="Center" Padding="4" />
+                </Grid>
+            </Border>
+        </Grid>
+
+
+        <Grid Grid.Row="1" Margin="4,0,4,0">
+            <Grid.Background>
+                <VisualBrush TileMode="Tile" Viewport="0,0,0.050,0.050">
+                    <VisualBrush.Visual>
+                        <Image Source="{StaticResource EscheresqueBackground}" />
+                    </VisualBrush.Visual>
+                </VisualBrush>
+            </Grid.Background>
+            <Grid.ColumnDefinitions>
+                <!--<ColumnDefinition Width="{Binding Path=SelectedItem, Converter={StaticResource toolBarWidthConverter}, FallbackValue=115}" />-->
+                <ColumnDefinition Width="108" MinWidth="108"/>
+                <ColumnDefinition Width="*" MinWidth="360"/>
+                <!--<ColumnDefinition Width="Auto" />-->
+                <ColumnDefinition Width="420" MinWidth="420"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Height="{Binding ElementName=ControlCanvas, Path=ActualHeight}" HorizontalAlignment="Center" >
+
+                <Button x:Name="btnOpenDoc"
+                    Content="Open Family"
+                    Click="btnOpenDoc_Click" 
+                    Visibility="{Binding Path=SelectedItem, Converter={StaticResource isProjectConverter}, FallbackValue=Visble}" 
+                     Style="{StaticResource ToolButton}"/>
+
+
+                <Button x:Name="btnDeleteFamily"
+                    Click="DeleteFamily_Click" 
+                    Visibility="{Binding Path=SelectedItem, Converter={StaticResource showDocCommands}, FallbackValue=Visble}" 
+                    Style="{StaticResource ToolButton}" >
+                    <TextBlock TextWrapping="Wrap" TextAlignment="Center">Delete Selected Family</TextBlock>
+                </Button>
+
+                <Button x:Name="btnPurgeCADStyles"
+                    Click="PurgeImportedStylesInDocCmd_Click" 
+                    Visibility="{Binding Path=SelectedItem, Converter={StaticResource showDocCommands}, FallbackValue=Visble}" 
+                    Style="{StaticResource ToolButton}" >
+                    <TextBlock TextWrapping="Wrap" TextAlignment="Center">Purge CAD Styles</TextBlock>
+                </Button>
+
+                <Button x:Name="btnDeleteChdImports"
+                    Click="DeleteChkdImportsInDoc_Click" 
+                    Visibility="{Binding Path=SelectedItem, Converter={StaticResource showDocCommands}, FallbackValue=Visble}" 
+                    Style="{StaticResource ToolButton}" 
+                    IsEnabled="{Binding ElementName=ControlCanvas, Path=Content, Converter={StaticResource isTreeViewCtrl}}"    >
+                    <TextBlock TextWrapping="Wrap" TextAlignment="Center">Delete Checked Imports</TextBlock>
+                </Button>
+
+                <Button x:Name="btnDeleteImport"
+                    Click="DeleteSelImportsInDoc_Click" 
+                    Visibility="{Binding Path=SelectedItem, Converter={StaticResource showImportCommands}, FallbackValue=Visble}" 
+                    Style="{StaticResource ToolButton}" >
+                    <TextBlock TextWrapping="Wrap" TextAlignment="Center">Delete Import</TextBlock>
+                </Button>
+
+                <Button x:Name="btnDeleteAllStyles"
+                    Click="DeleteAllStyles_Click" 
+                    Visibility="{Binding Path=SelectedItem, Converter={StaticResource showImportCommands}, FallbackValue=Visble}" 
+                    Style="{StaticResource ToolButton}" >
+                    <TextBlock TextWrapping="Wrap" TextAlignment="Center">Delete All CAD Styles</TextBlock>
+                </Button>
+
+                <Button x:Name="btnDeleteChkdStyles"
+                    Click="DeleteChkdStyles_Click" 
+                    Visibility="{Binding Path=SelectedItem, Converter={StaticResource showImportCommands}, FallbackValue=Visble}" 
+                    Style="{StaticResource ToolButton}" >
+                    <TextBlock TextWrapping="Wrap" TextAlignment="Center">Delete Checked CAD Styles</TextBlock>
+                </Button>
+
+            </StackPanel>
+            
+            <!--<ScrollViewer 
+                          Visibility="{Binding Path=SelectedItem, Converter={StaticResource showToolBarConverter}, FallbackValue=Visible}"
+                          HorizontalScrollBarVisibility="Disabled"
+                          VerticalScrollBarVisibility="Disabled"
+                          PreviewMouseWheel="ScrollViewer_PreviewMouseWheel"
+                        HorizontalContentAlignment="Center"
+                          >
+                <ScrollViewer.Resources>
+                    --><!--set scroll bar with from: http://stackoverflow.com/questions/1321247/how-to-increase-scrollbar-width-in-wpf-scrollviewer--><!--
+                    <sys:Double x:Key="{x:Static SystemParameters.VerticalScrollBarWidthKey}">4</sys:Double>
+                </ScrollViewer.Resources>
+
+                
+            </ScrollViewer>-->
+            <Border BorderThickness="4" Grid.Column="1" BorderBrush="White">
+                <ContentControl Name="ControlCanvas" DataContext="{Binding Path=m_externalView}" Margin="0" />
+            </Border>
+            
+
+            <!--<GridSplitter Grid.Column="2" HorizontalAlignment="Stretch" Margin="2,0,2,0" Width="3" Foreground="Coral" Background="Gainsboro"/>-->
+
+            <DockPanel Grid.Column="2" Grid.Row="1" >
+                <DockPanel.Background>
+                    <VisualBrush TileMode="Tile" Viewport="0,0,0.95,0.75">
+                        <VisualBrush.Visual>
+                            <Image Source="{StaticResource asanohaGridBackground}" />
+                        </VisualBrush.Visual>
+                    </VisualBrush>
+                </DockPanel.Background>
+                <ContentControl Name="PropertyCanvas" DataContext="{Binding Path=m_propertyView}" />
+            </DockPanel>
+        </Grid>
+
+        
+
+        
+
+        <Grid Grid.Row="2" Grid.ColumnSpan="3"  Background="Gainsboro">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" x:Name="col1"/>
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Separator Grid.ColumnSpan="3" />
+
+            <ProgressBar x:Name="pBar"  Height="26" MinWidth="100" Width="{Binding ElementName=col1, Path=Width}"  Margin="8" Grid.Row="1" Foreground="PowderBlue" />
+
+            <!--<TextBlock x:Name="tBxNumFamilies" HorizontalAlignment="Stretch" Margin="15,0,0,0" VerticalAlignment="Center" Grid.Row="1" Panel.ZIndex="1"/>-->
+            <RichTextBox x:Name="tBxNumFamilies" HorizontalAlignment="Left" Margin="15,0,0,0" VerticalAlignment="Center" Grid.Row="1" Panel.ZIndex="1" Background="Transparent" BorderBrush="Transparent" Width="{Binding ElementName=pBar, Path=Width}">
+                <FlowDocument>
+                    <Table>
+                        <Table.Columns>
+                            <TableColumn Width="{Binding ElementName=pBar, Path=ActualWidth}" />
+                            <TableColumn Width="60" />
+                        </Table.Columns>
+                        <TableRowGroup>
+                            <TableRow>
+                                <TableCell>
+                                    <Paragraph TextAlignment="Left">
+                                        <TextBlock x:Name="txtBxLoadingFamily" Background="Transparent" HorizontalAlignment="Left" FontSize="9"/>
+                                    </Paragraph>
+                                </TableCell>
+                                <TableCell>
+                                    <Paragraph TextAlignment="Right">
+                                        <TextBlock x:Name="txtBxNumberLoaded" Background="Transparent" FontSize="9" HorizontalAlignment="Right" Margin="0,0,15,0"/>
+                                    </Paragraph>
+                                </TableCell>
+                            </TableRow>
+                        </TableRowGroup>
+                    </Table>
+                </FlowDocument>
+            </RichTextBox>
+
+            <GroupBox  Grid.Column="2" Grid.Row="1"
+                          HorizontalAlignment="Stretch" 
+                          HorizontalContentAlignment="Right" 
+                          FlowDirection="RightToLeft">
+                <StackPanel Orientation="Horizontal">
+
+                    <Button Name="btnClose" Click="btnClose_Click" >
+                        <AccessText Margin="4">C_lose</AccessText>
+                    </Button>
+                    <Button Name="btnCancelBtn" Click="btnCancelBtn_Click" >
+                        <AccessText>_Cancel</AccessText>
+                    </Button>
+
+                    <!--<Button Name="btnExportToCSV" Click="btnExportToCSV_Click" >
+                        <AccessText>_Export To CSV</AccessText>
+                    </Button>-->
+
+                    <Button x:Name="helpMenuBtn"  
+                                Click="helpMenuBtn_Click" 
+                                MinWidth="26" 
+                                MinHeight="26"
+                        >
+                        <Button.Content>
+                            <Path Width="17.6263" Height="17.6262" Canvas.Left="19.1869" Canvas.Top="19.1868" Stretch="Fill" Fill="#FF000000" Data="F1 M 27.5314,21.8628L 33.0126,19.4224L 34.7616,23.3507C 36.6693,22.9269 38.6044,22.8903 40.4668,23.2026L 42.0083,19.1868L 47.6098,21.337L 46.0683,25.3528C 47.6612,26.3669 49.0747,27.6889 50.2088,29.2803L 54.1371,27.5313L 56.5776,33.0126L 52.6493,34.7616C 53.0731,36.6693 53.1097,38.6043 52.7974,40.4668L 56.8131,42.0083L 54.6629,47.6097L 50.6472,46.0683C 49.6331,47.6613 48.3111,49.0748 46.7197,50.2089L 48.4686,54.1372L 42.9874,56.5776L 41.2384,52.6493C 39.3307,53.0731 37.3957,53.1097 35.5333,52.7974L 33.9918,56.8131L 28.3903,54.6629L 29.9318,50.6472C 28.3388,49.6331 26.9252,48.3111 25.7911,46.7196L 21.8628,48.4686L 19.4224,42.9873L 23.3507,41.2383C 22.9269,39.3307 22.8903,37.3957 23.2026,35.5332L 19.1869,33.9918L 21.3371,28.3903L 25.3528,29.9318C 26.3669,28.3388 27.6889,26.9252 29.2804,25.7911L 27.5314,21.8628 Z M 34.3394,29.7781C 29.7985,31.7998 27.7564,37.1198 29.7781,41.6606C 31.7998,46.2015 37.1198,48.2436 41.6606,46.2219C 46.2015,44.2002 48.2436,38.8802 46.2219,34.3394C 44.2002,29.7985 38.8802,27.7564 34.3394,29.7781 Z "/>
+                        </Button.Content>
+                    </Button>
+                </StackPanel>
+            </GroupBox>
+
+        </Grid>
+
+    </Grid>
+</UserControl>
