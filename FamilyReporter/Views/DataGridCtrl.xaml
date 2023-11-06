@@ -1,0 +1,244 @@
+﻿<UserControl x:Class="FamilyReporter.DataGridCtrl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
+             xmlns:local="clr-namespace:FamilyReporter"
+             mc:Ignorable="d" 
+             d:DesignHeight="300" d:DesignWidth="300" Loaded="UserControl_Loaded" >
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/FamilyReporter;component/Views/Resources/ViewResourceDictionary.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <sys:Int32 x:Key="NameColumnWidth">160</sys:Int32>
+            <!--HAS STRING TO BOOLEAN FOR SEARCH UNGROUPING-->
+            <local:HasStringToBooleanConverter x:Key="hasStringToBooleanConverter" />
+            <!--datagrid grouping from: http://www.c-sharpcorner.com/uploadfile/dpatra/grouping-in-datagrid-in-wpf/ -->
+            <Style x:Key="GroupHeaderStyle" TargetType="{x:Type GroupItem}" >
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type GroupItem}">
+                            <Expander x:Name="groupExpander" IsExpanded="{Binding ElementName=expandAll, Path=IsChecked, Mode=TwoWay, UpdateSourceTrigger=Explicit}">
+                                <Expander.Header>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding Name}" FontWeight="Bold"/>
+                                        <TextBlock Text="{Binding ItemCount, StringFormat=' ,{0:N0} Item(s)'}" />
+                                    </StackPanel>
+                                </Expander.Header>
+                                <ItemsPresenter />
+                            </Expander>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid x:Name="topLevelGrid">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+
+        <ScrollViewer x:Name="scrollViewer" VerticalScrollBarVisibility="Auto" PreviewMouseWheel="ScrollViewer_PreviewMouseWheel">
+            <ScrollViewer.Resources>
+                <!--set scroll bar with from: http://stackoverflow.com/questions/1321247/how-to-increase-scrollbar-width-in-wpf-scrollviewer-->
+                <sys:Double x:Key="{x:Static SystemParameters.VerticalScrollBarWidthKey}">8</sys:Double>
+            </ScrollViewer.Resources>
+            <DataGrid ItemsSource="{Binding FamilyCollection}"
+                  x:Name="dataGrid"
+                      Width="{Binding ElementName=topLevelGrid, Path=ActuaWidth-4-{x:Static SystemParameters.VerticalScrollBarWidthKey}, Mode=OneWay}"
+                      Style="{Binding Source={StaticResource readOnlyDatagridStyle}}"
+                      VerticalScrollBarVisibility="Visible"
+                      SelectedItem="{Binding Path=SelectedItem, Mode=TwoWay, UpdateSourceTrigger=Explicit}"
+                      SelectionChanged="dataGrid_SelectionChanged"
+                  >
+                <DataGrid.GroupStyle>
+                    <GroupStyle ContainerStyle="{StaticResource GroupHeaderStyle}" >
+                        <GroupStyle.Panel>
+                            <ItemsPanelTemplate>
+                                <DataGridRowsPresenter />
+                            </ItemsPanelTemplate>
+                        </GroupStyle.Panel>
+                    </GroupStyle>
+                </DataGrid.GroupStyle>
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Name" 
+                                        Binding="{Binding ItemName}" 
+                                        Width="*" 
+                                        MinWidth="160"
+                                        />
+                    <DataGridTextColumn Header="Number Of Instances" 
+                                        Binding="{Binding DocumentItem.DocumentInstanceCount}"
+                                        Width="Auto"
+                                        MinWidth="30"
+                                        />
+                    <DataGridTextColumn Header="Size (kb)" 
+                                        Binding="{Binding DocumentItem.DocumentSize, StringFormat={}{0:N0}}"
+                                        Width="Auto"
+                                        MinWidth="60"
+                                        CellStyle="{Binding Source={StaticResource cellStyleRightJustifiedNumber}}"
+                                        />
+                </DataGrid.Columns>
+                <!--CONTEXT MENU-->
+                <DataGrid.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem 
+                                    Command="{Binding OpenDocumentCmd}"
+                                    CommandParameter="{Binding SelectedItem}"
+                                    >
+                            <MenuItem.Header>
+                                <Run Text="{Binding SelectedItem.ItemName, StringFormat='Open {0}', Mode=OneWay}" />
+                            </MenuItem.Header>
+                        </MenuItem>
+                        <MenuItem 
+                                    Header="Purge All Imported Object Styles In Document"
+                                    Command="{Binding PurgeAllImportedStylesInDocCmd}"
+                                    CommandParameter="{Binding FamilyCollection.CurrentItem}"
+                                    Click="PurgeImportedStylesInDocCmd_Click" />
+                        <MenuItem
+                                    Header="Delete Family From Project"
+                                    Command="{Binding DeleteDocumentCmd}"
+                                    CommandParameter="{Binding FamilyCollection.CurrentItem}"
+                                    Click="DeleteSelectedDocument_Click" />
+                    </ContextMenu>
+                </DataGrid.ContextMenu>
+            </DataGrid>
+        </ScrollViewer>
+
+        <Grid Grid.Row="1" Background="Gainsboro">
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <TextBox x:Name="searchBx" Text="{Binding FilterString, UpdateSourceTrigger=PropertyChanged}" MinWidth="200" MinHeight="18" Margin="4,8,4,4" Panel.ZIndex="1" TextChanged="searchBx_TextChanged">
+                <TextBox.Style>
+                    <!--background text from: http://stackoverflow.com/questions/7425618/how-can-i-add-a-hint-text-to-wpf-textbox-->
+                    <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                        <Style.Resources>
+                            <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
+                                <VisualBrush.Visual>
+                                    <Label Content="Search" Foreground="Black" />
+                                </VisualBrush.Visual>
+                            </VisualBrush>
+                        </Style.Resources>
+                        <Style.Triggers>
+                            <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
+                                <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                            </Trigger>
+                            <Trigger Property="Text" Value="{x:Null}">
+                                <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter Property="Background" Value="White" />
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBox.Style>
+            </TextBox>
+            <!--RECTANGLE AS BACKGROUND FOR SEARCH BOX-->
+            <Rectangle Width="{Binding ElementName=searchBx, Path=ActualWidth}" Height="{Binding ElementName=searchBx, Path=ActualHeight}" Fill="White" StrokeThickness="0"/>
+
+            <StackPanel Orientation="Horizontal" Grid.Row="1" Background="Gainsboro">
+                <ToggleButton x:Name="expandAll" >
+                    <ToggleButton.Style>
+                        <Style TargetType="ToggleButton" >
+                            <Setter Property="Margin" Value="8" />
+                            <Setter Property="Height" Value="25"/>
+                            <Setter Property="MinWidth" Value="115" />
+                            <Setter Property="Padding" Value="4" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border BorderThickness="2"
+                                                BorderBrush="WhiteSmoke"
+                                                Background="{TemplateBinding Background}"
+                                                CornerRadius="2">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="ToggleButton.IsChecked" Value="True">
+                                                <Setter Property="Background" Value="LightSteelBlue" />
+                                            </Trigger>
+                                            <Trigger Property="ToggleButton.IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="SlateGray" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                            <!--END OF STYLING-->
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource Self}}" Value="True">
+                                    <Setter Property="Content" Value="Collapse Categories" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource Self}}" Value="False">
+                                    <Setter Property="Content" Value="Expand Categories" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding ElementName=removeGroups, Path=IsChecked}" Value="True">
+                                    <Setter Property="IsEnabled" Value="False" />
+                                </DataTrigger>
+                                <!-- EXPAND AND COLLAPSE GROUPS IF SEARCH TEXT IS PRESENT-->
+                                <DataTrigger Binding="{Binding ElementName=searchBx, Path=Text, Converter={StaticResource hasStringToBooleanConverter}, UpdateSourceTrigger=Explicit, Mode=OneWay}" Value="True">
+                                    <Setter Property="IsChecked" Value="True" />
+                                </DataTrigger>
+                                <!--<DataTrigger Binding="{Binding FilterString, Converter={StaticResource hasStringToBooleanConverter}, UpdateSourceTrigger=Explicit, Mode=OneWay}" Value="False">
+                                    <Setter Property="IsChecked" Value="False" />
+                                </DataTrigger>-->
+                            </Style.Triggers>
+                        </Style>
+                    </ToggleButton.Style>
+                </ToggleButton>
+                <ToggleButton x:Name="removeGroups" IsChecked="{Binding IsGrouped}">
+                    <ToggleButton.Style>
+                        <Style TargetType="ToggleButton">
+                            <Setter Property="Margin" Value="8" />
+                            <Setter Property="Height" Value="25"/>
+                            <Setter Property="MinWidth" Value="75" />
+                            <Setter Property="Padding" Value="4" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border BorderThickness="2"
+                                                BorderBrush="WhiteSmoke"
+                                                Background="{TemplateBinding Background}"
+                                                CornerRadius="2">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="ToggleButton.IsChecked" Value="True">
+                                                <Setter Property="Background" Value="LightSteelBlue" />
+                                            </Trigger>
+                                            <Trigger Property="ToggleButton.IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="SlateGray" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                            <!--END OF STYLING-->
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource Self}}" Value="True">
+                                    <Setter Property="Content" Value="Group By Category" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding IsChecked, RelativeSource={RelativeSource Self}}" Value="False">
+                                    <Setter Property="Content" Value="Ungroup" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ToggleButton.Style>
+                </ToggleButton>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</UserControl>

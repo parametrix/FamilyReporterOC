@@ -1,0 +1,187 @@
+﻿<UserControl x:Class="FamilyReporter.FamilyPropertiesCtrl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
+             xmlns:local="clr-namespace:FamilyReporter"
+             mc:Ignorable="d" 
+             d:DesignHeight="300" d:DesignWidth="300">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/FamilyReporter;component/Views/Resources/ViewResourceDictionary.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!--SET COMMON WIDTH PROPERTIES-->
+            <sys:Int32 x:Key="PropertyColumnWidth">130</sys:Int32>
+            <sys:Int32 x:Key="ImageWidth">150</sys:Int32>
+            <XmlNamespaceMappingCollection x:Key="mapping">
+                <XmlNamespaceMapping Uri="http://www.w3.org/2005/Atom" Prefix="r" />
+                <XmlNamespaceMapping Uri="urn:schemas-autodesk-com:partatom" Prefix="A" />
+                <!--NAMESPACE INSERTED BY APP-->
+                <XmlNamespaceMapping Uri="http://spicetools.co/namespaces/familyreporter" Prefix="STPL" />
+            </XmlNamespaceMappingCollection>
+            <XmlDataProvider x:Key="entry" XPath="r:entry" XmlNamespaceManager="{StaticResource mapping}" />
+            <XmlDataProvider x:Key="category" XPath="r:entry/r:category[last()]" XmlNamespaceManager="{StaticResource mapping}" />
+            <XmlDataProvider x:Key="taxonomy" XPath="r:entry/A:taxonomy" XmlNamespaceManager="{StaticResource mapping}"/>
+            <XmlDataProvider x:Key="feature" XPath="r:entry/A:features/A:feature" XmlNamespaceManager="{StaticResource mapping}"/>
+            <XmlDataProvider x:Key="group" XPath="r:entry/A:features/A:feature/A:group/*" XmlNamespaceManager="{StaticResource mapping}" />
+            <XmlDataProvider x:Key="family" XPath="r:entry/A:family" XmlNamespaceManager="{StaticResource mapping}"/>
+            <XmlDataProvider x:Key="part" XPath="r:entry/A:family/A:part/*" XmlNamespaceManager="{StaticResource mapping}"/>
+
+            <!--PROJECT REPORTER CONTAINER-->
+            <XmlDataProvider x:Key="projectReporter" XPath="r:entry/STPL:ProjectReporter/*" XmlNamespaceManager="{StaticResource mapping}" />
+
+            <!--TEMPLATE SELECTORS-->
+            <local:AttributeCountSelector x:Key="attributeCountSelector" />
+
+            <!--CELL TEMPLATE-->
+            <DataTemplate x:Key="ThreeAttributeTemplate">
+                <TextBlock Text="{Binding XPath=@displayName}" ToolTip="{Binding XPath=@displayName}"/>
+            </DataTemplate>
+            <DataTemplate x:Key="TwoAttributeTemplate">
+                <TextBlock Text="{Binding Name}" ToolTip="{Binding Name}" />
+            </DataTemplate>
+            <DataTemplate x:Key="SingleAttributeTemplate">
+                <TextBlock Text="{Binding XPath=.}" ToolTip="{Binding XPath=.}"/>
+            </DataTemplate>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="{Binding Source={StaticResource entry}, XPath=r:title}" FontSize="16" FontWeight="Bold"  TextWrapping="Wrap" Background="Gainsboro" Padding="6"/>
+
+        <ScrollViewer Width="420" VerticalScrollBarVisibility="Auto" Grid.Row="1" PreviewMouseWheel="ScrollViewer_PreviewMouseWheel">
+            <ScrollViewer.Resources>
+                <!--set scroll bar with from: http://stackoverflow.com/questions/1321247/how-to-increase-scrollbar-width-in-wpf-scrollviewer-->
+                <sys:Double x:Key="{x:Static SystemParameters.VerticalScrollBarWidthKey}">8</sys:Double>
+            </ScrollViewer.Resources>
+            <StackPanel>
+
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="{Binding Source={StaticResource ImageWidth}}" />
+                    </Grid.ColumnDefinitions>
+
+                    <!--STPL DATA GRID-->
+                    <DataGrid ItemsSource="{Binding Source={StaticResource projectReporter}}"
+                                Style="{Binding Source={StaticResource readOnlyDatagridStyle}}"
+                              >
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Property" 
+                                                Binding="{Binding XPath=@displayName}" 
+                                                Width="{Binding Source={StaticResource PropertyColumnWidth}}"
+                                                />
+                            <DataGridTextColumn Header="Value" Binding="{Binding XPath=.}" Width="*"/>
+                        </DataGrid.Columns>
+                        <!--to show tooltip in value columns-->
+                        <DataGrid.CellStyle>
+                            <Style>
+                                <Setter Property="DataGridCell.ToolTip" Value="{Binding}"/>
+                            </Style>
+                        </DataGrid.CellStyle>
+                    </DataGrid>
+
+                    <!-- PREVIEW IMAGE-->
+                    <Image Grid.Column="1" x:Name="imageViewer" HorizontalAlignment="Center" VerticalAlignment="Center" />
+
+                </Grid>
+
+
+
+                <!--FAMILY PROPERTIES-->
+                <TextBox Text="{Binding Source={StaticResource feature}, XPath=A:title}" Background="LightGray" Margin="0,6,0,0" FontWeight="Bold"/>
+
+                <DataGrid ItemsSource="{Binding Source={StaticResource group}}"
+                          Style="{Binding Source={StaticResource readOnlyDatagridStyle}}"
+                          >
+                    <DataGrid.Columns>
+                        <DataGridTemplateColumn Header="Property" CellTemplateSelector="{StaticResource attributeCountSelector}" Width="{Binding Source={StaticResource PropertyColumnWidth}}"/>
+                        <DataGridTextColumn Header="Value" Binding="{Binding XPath=.}" Width="*"/>
+                        <DataGridTextColumn Header="Type" Binding="{Binding XPath=@type}" Width="Auto"/>
+                        <DataGridTextColumn Header="Parameter Type" Binding="{Binding XPath=@typeOfParameter}" Width="100"/>
+                    </DataGrid.Columns>
+                    <DataGrid.RowStyle>
+                        <Style TargetType="{x:Type DataGridRow}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Name}" Value="A:title">
+                                    <Setter Property="Background" Value="LightGray" />
+                                    <Setter Property="Foreground" Value="LightGray" />
+                                    <Setter Property="FontSize" Value="1" />
+                                    <Setter Property="Visibility" Value="Visible" />
+                                    <Setter Property="DetailsVisibility" Value="Visible" />
+                                    <Setter Property="DetailsTemplate">
+                                        <Setter.Value>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding XPath=.}" FontSize="12" Foreground="Black" Margin="2,0,0,4" ToolTip="{Binding XPath=.}"/>
+                                            </DataTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.RowStyle>
+                    <!--to show tooltip in value column-->
+                    <DataGrid.CellStyle>
+                        <Style>
+                            <Setter Property="DataGridCell.ToolTip" Value="{Binding}"/>
+                        </Style>
+                    </DataGrid.CellStyle>
+                </DataGrid>
+
+
+                <TextBox Text="{Binding Source={StaticResource family}, 
+                XPath=A:variationCount, 
+                StringFormat=Number of User-Defined Types:  {0} }" 
+                     Margin="2,10,2,2"
+                     Background="LightGray"
+                     FontWeight="Bold"/>
+
+                <!--TYPE PROPERTIES-->
+                <DataGrid ItemsSource="{Binding Source={StaticResource part}}"
+                          Style="{Binding Source={StaticResource readOnlyDatagridStyle}}"
+                          >
+                    <DataGrid.Columns>
+                        <DataGridTemplateColumn Header="Property" CellTemplateSelector="{StaticResource attributeCountSelector}" Width="{Binding Source={StaticResource PropertyColumnWidth}}"/>
+                        <DataGridTextColumn Header="Value" Binding="{Binding XPath=.}" Width="*"/>
+                        <DataGridTextColumn Header="Type" Binding="{Binding XPath=@type}" Width="Auto"/>
+                        <DataGridTextColumn Header="Parameter Type" Binding="{Binding XPath=@typeOfParameter}" Width="100"/>
+                    </DataGrid.Columns>
+                    <DataGrid.RowStyle>
+                        <Style TargetType="{x:Type DataGridRow}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Name}" Value="title">
+                                    <Setter Property="Background" Value="LightGray" />
+                                    <Setter Property="Foreground" Value="LightGray" />
+                                    <Setter Property="FontSize" Value="1" />
+                                    <Setter Property="Visibility" Value="Visible" />
+                                    <Setter Property="DetailsVisibility" Value="Visible" />
+                                    <Setter Property="DetailsTemplate">
+                                        <Setter.Value>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding XPath=.}" FontSize="12" Foreground="Black" Margin="2,0,0,4" ToolTip="{Binding XPath=.}"/>
+                                            </DataTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.RowStyle>
+                    <!--to show tooltip in value column-->
+                    <DataGrid.CellStyle>
+                        <Style>
+                            <Setter Property="DataGridCell.ToolTip" Value="{Binding}"/>
+                        </Style>
+                    </DataGrid.CellStyle>
+                </DataGrid>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>
